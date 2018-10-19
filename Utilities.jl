@@ -1,4 +1,5 @@
 import Base.floor
+using SparseArrays
 
 function boundingBox(mesh::HomogenousMesh)
     matrix_verts = hcat(convert(Array{Array{Float32}},mesh.vertices)...)
@@ -127,4 +128,100 @@ function meshDevice!(cubes::Array{YeeSubCube,3},myMesh::HomogenousMesh,cubeSize:
             end
         end
     end
+end
+
+function calculate_PML_2D(grid_size, PML_size)
+    # Creates a Uniaxial PML layer that matches in size of the solution space grid_size
+    # at the boundaries defined by PML_size
+    # For lossy maxwell's equations ∇XE = k[μ_r][S]H
+
+    # These variables setup the behavior of the PML layer
+    a_max = 3
+    p = 3 # Drop off rate
+    σ_prime_max = 1 # Maximum conductivity
+
+    # There are two cases, 2D and 3D - assume 2D #FIXME
+    sx = fill(1.0+0.0im,grid_size) # Fill soulution space with 1s
+    sy = fill(1.0+0.0im,grid_size)
+    # Add xlow PML
+    for nx = 1:PML_size[1]
+        ax = 1 + a_max * (nx/PML_size[1])^p
+        σ_prime_x = σ_prime_max * (sin((pi*nx)/(2*PML_size[1])))^2
+        sx[PML_size[1]-nx+1,:] = fill(ax * (1 + 1.0im * η_0 * σ_prime_x),(grid_size[2],1))
+    end
+    # Add xhigh PML
+    for nx = 1:PML_size[2]
+        ax = 1 + a_max * (nx/PML_size[2])^p
+        σ_prime_x = σ_prime_max * (sin((pi*nx)/(2*PML_size[2])))^2
+        sx[grid_size[1]-PML_size[2]+nx,:] = fill(ax * (1 + 1.0im * η_0 * σ_prime_x),(grid_size[2],1))
+    end
+    # Add ylow PML
+    for ny = 1:PML_size[3]
+        ay = 1 + a_max * (ny/PML_size[3])^p
+        σ_prime_y = σ_prime_max * (sin((pi*ny)/(2*PML_size[3])))^2
+        sy[:,PML_size[3]-ny+1] = fill(ay * (1 + 1.0im * η_0 * σ_prime_y),(1,grid_size[1]))
+    end
+    # Add yhigh PML
+    for ny = 1:PML_size[4]
+        ay = 1 + a_max * (ny/PML_size[4])^p
+        σ_prime_y = σ_prime_max * (sin((pi*ny)/(2*PML_size[4])))^2
+        sy[:,grid_size[2]-PML_size[4]+ny] = fill(ay * (1 + 1.0im * η_0 * σ_prime_y),(1,grid_size[1]))
+    end
+    return sy
+end
+
+@enum BC Periodic=1 Dirichlet=2
+
+function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::BC,k_inc = 0)
+    # Generates the Yee Grid Derivative on the 2D Grid #FIXME for 3D
+
+
+    # To create a sparse array, we have to make I a vector of row idicies,
+    # J a vector of column indicies, and V a vector of values
+    # We do this to create our large derivative array for the two boundary condition cases
+
+    # Storing results in a sparse array of row index I, column index J, and value V
+    I = []
+    J = []
+    V = []
+
+    # Every element is multiplied by 1/Δx
+    entry_x = 1/grid_resolution[1]
+
+    if boundary_condition == Dirichlet
+        # Starting position
+        push!(I,1)
+        push!(J,1)
+        push!(V,-entry_x)
+        push!(I,1)
+        push!(J,2)
+        push!(V,entry_x)
+        for i = 2:grid_size[1]*grid_size[2]
+            push!(I,i)
+            push!(J,i)
+            push!(V,-entry_x)
+            if mod(i,grid_size[1]) == 0
+                push!(I,i)
+                push!(J,i-1)
+                push!(V,entry_x)
+            elseif mod(i,grid_size[1]) == 1
+                push!(I,i)
+                push!(J,i+1)
+                push!(V,entry_x)
+            else
+                push!(I,i)
+                push!(J,i-1)
+                push!(V,entry_x)
+                push!(I,i)
+                push!(J,i+1)
+                push!(V,entry_x)
+            end
+        end
+    end
+    if boundary_condition == Periodic
+        # K_Inc only required if boundary condition is periodic
+        @assert (k_inc == 0) "Must provide an incident k vector for periodic boundary conditions"
+        #FIXME implement this
+    end
+    sparse(I,J,V)
 end

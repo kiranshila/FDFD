@@ -112,6 +112,7 @@ function meshDevice!(cubes::Array{YeeSubCube,3},myMesh::HomogenousMesh,cubeSize:
             convert(Array{Float64,1},myMesh.vertices[i+2]))'
         triangle = triangle + [x y z;x y z;x y z]; # Translation Matrix assuming triangle is [x y z; x y z; x y z]
         #   - For every cube that has the potential to be intersecting with the triangle
+        #FIXME
         triangleBBIndex = map(x->ceil(Int64,x+eps(Float64)),boundingBox(triangle) ./ cubeSize)
         for i = triangleBBIndex[1,1]:triangleBBIndex[1,2]
             for j = triangleBBIndex[2,1]:triangleBBIndex[2,2]
@@ -181,9 +182,9 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::BC,k_
     # We do this to create our large derivative array for the two boundary condition cases
 
     # Storing results in a sparse array of row index I, column index J, and value V
-    I = []
-    J = []
-    V = []
+    I = Int64[]
+    J = Int64[]
+    V = Float64[]
 
     # Every element is multiplied by 1/Δx
     entry_x = 1/grid_resolution[1]

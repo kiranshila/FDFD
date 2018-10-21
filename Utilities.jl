@@ -173,7 +173,7 @@ end
 
 @enum BC Periodic=1 Dirichlet=2
 
-function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::BC,k_inc = 0)
+function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple{BC,BC},k_inc = [0 0])
     # Generates the Yee Grid Derivative on the 2D Grid #FIXME for 3D
 
 
@@ -184,45 +184,66 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::BC,k_
     # Storing results in a sparse array of row index I, column index J, and value V
     I = Int64[]
     J = Int64[]
-    V = Float64[]
+    V = Complex{Float64}[]
+    DEX = nothing
+    DEY = nothing
 
-    # Every element is multiplied by 1/Δx
-    entry_x = 1/grid_resolution[1]
-
-    if boundary_condition == Dirichlet
-        # Starting position
-        push!(I,1)
-        push!(J,1)
-        push!(V,-entry_x)
-        push!(I,1)
-        push!(J,2)
-        push!(V,entry_x)
-        for i = 2:grid_size[1]*grid_size[2]
+    # Check if Nx = 1
+    if grid_size[1] == 1
+        DEX = 1.0im*k_inc[1]*sparse(I,grid_size[1]*grid_size[2])
+    else
+        # Every element is multiplied by 1/Δx
+        entry_x = 1/grid_resolution[1]
+        for i = 1:grid_size[1]*grid_size[2]
+            # Main Diagonal
             push!(I,i)
             push!(J,i)
-            push!(V,-entry_x)
-            if mod(i,grid_size[1]) == 0
-                push!(I,i)
-                push!(J,i-1)
-                push!(V,entry_x)
-            elseif mod(i,grid_size[1]) == 1
-                push!(I,i)
-                push!(J,i+1)
-                push!(V,entry_x)
-            else
-                push!(I,i)
-                push!(J,i-1)
-                push!(V,entry_x)
-                push!(I,i)
-                push!(J,i+1)
-                push!(V,entry_x)
+            push!(V,-1)
+        end
+        for i = 1:grid_size[1]*grid_size[2]-1
+            # Secondary Diagonal
+            push!(I,i)
+            push!(J,i+1)
+            push!(V,1)
+        end
+        DEX = sparse(I,J,V)
+        if boundary_condition[1] == Periodic
+            Λ_x = grid_size[1] * grid_resolution[1]
+            entry_periodic_x = exp(1.0im*k_inc[1]*Λ_x)
+            for i = grid_size[1]:grid_size[1]:grid_size[1]*grid_size[2]-1
+                DEX[i,Int(i/grid_size[1])] = entry_periodic_x
+                DEX[i,i+1] = 0
             end
         end
     end
-    if boundary_condition == Periodic
-        # K_Inc only required if boundary condition is periodic
-        @assert (k_inc == 0) "Must provide an incident k vector for periodic boundary conditions"
-        #FIXME implement this
+
+    # Clear Variables
+    I = Int64[]
+    J = Int64[]
+    V = Float64[]
+
+    # Check if Ny = 1
+    if grid_size[1] == 1
+        DEY = 1.0im*k_inc[2]*sparse(I,grid_size[1]*grid_size[2])
+    else
+        # Every element is multiplied by 1/Δx
+        entry_y = 1/grid_resolution[2]
+        for i = 1:grid_size[1]*grid_size[2]
+            # Main Diagonal
+            push!(I,i)
+            push!(J,i)
+            push!(V,-1)
+        end
+        for i = 1:grid_size[1]*grid_size[2]-1
+            # Secondary Diagonal
+            push!(I,i)
+            push!(J,i+1)
+            push!(V,1)
+        end
+        if boundary_condition[2] == Periodic
+            # FIXME
+        end
+        DEY = sparse(I,J,V)
     end
-    sparse(I,J,V)
+    return DEX,DEY
 end

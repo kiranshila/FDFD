@@ -168,7 +168,7 @@ function calculate_PML_2D(grid_size, PML_size)
         σ_prime_y = σ_prime_max * (sin((pi*ny)/(2*PML_size[4])))^2
         sy[:,grid_size[2]-PML_size[4]+ny] = fill(ay * (1 + 1.0im * η_0 * σ_prime_y),(1,grid_size[1]))
     end
-    return sy
+    return sx,sy
 end
 
 @enum BC Periodic=1 Dirichlet=2
@@ -259,18 +259,23 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple
         if boundary_condition[2] == Periodic
             # For the periodic boundary condition in y, we only place elements when the boundary exists
             # This forms another diagonal, starting in column 1 after the roll over from the second diagonal
-            # This roll over occurs when at row Nx*Ny-Nx hits the edge of the matrix
+            # This roll over occurs when row Nx*Ny-Nx hits the edge of the matrix starting from Nx
+            # This will only happen when the number of rows is greater than Ny
+            # Or in other words, when Nx > 1
             # There will only be Nx entries then
 
-            # Bloch theorem entry
-            Λ_y = grid_size[2] * grid_resolution[2]
-            entry_periodic_y = exp(1.0im*k_inc[2]*Λ_y)
+            if grid_size[1] > 1
+                # Bloch theorem entry
+                Λ_y = grid_size[2] * grid_resolution[2]
+                entry_periodic_y = exp(1.0im*k_inc[2]*Λ_y)
 
-            # Place at boundary
-            for i = 1:grid_size[1]
-                DEY[i+grid_size[1]*grid_size[2]-grid_size[1],i] = entry_periodic_y*entry_y
+                # Place at boundary
+                for i = 1:grid_size[1]
+                    DEY[i+grid_size[1]*grid_size[2]-grid_size[1],i] = entry_periodic_y*entry_y
+                end
             end
         end
     end
-    return DEX,DEY
+    # Using copy to eagerly evaluate the transpose
+    return DEX,DEY,copy(-transpose(DEX)),copy(-transpose(DEY))
 end

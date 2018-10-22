@@ -17,3 +17,11 @@ NGRID = (Nx,Ny) # This is the entire solution space
 NPML = (0,0,20,20) # This sets up the PML boundary, xlow, xhigh, ylow, yhigh
 
 calculate_PML_2D(NGRID,NPML)
+
+##
+kinc = (2.2214,4.4429)
+NGRID = (3,3)
+RES = (1, 1)
+thisBC = (Dirichlet,Dirichlet)
+DEX,DEY = yee_grid_derivative(NGRID,RES,thisBC,kinc)
+##

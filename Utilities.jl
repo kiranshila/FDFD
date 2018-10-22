@@ -182,7 +182,7 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple
     # We do this to create our large derivative array for the two boundary condition cases
 
     # Storing results in a sparse array of row index I, column index J, and value V
-    I = Int64[]
+    _I = Int64[] # I is reserved for the UniformScaling constant for Identity
     J = Int64[]
     V = Complex{Float64}[]
     DEX = nothing
@@ -190,60 +190,87 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple
 
     # Check if Nx = 1
     if grid_size[1] == 1
-        DEX = 1.0im*k_inc[1]*sparse(I,grid_size[1]*grid_size[2])
+        DEX = 1.0im*k_inc[1]*sparse(I,grid_size[1]*grid_size[2],grid_size[1]*grid_size[2])
     else
         # Every element is multiplied by 1/Δx
         entry_x = 1/grid_resolution[1]
         for i = 1:grid_size[1]*grid_size[2]
-            # Main Diagonal
-            push!(I,i)
+            # Main Diagonal, all -1*1/ΔX
+            push!(_I,i)
             push!(J,i)
-            push!(V,-1)
+            push!(V,-1*entry_x)
         end
         for i = 1:grid_size[1]*grid_size[2]-1
-            # Secondary Diagonal
-            push!(I,i)
+            # Secondary Diagonal, above first diagonal, all 1*1/ΔX
+            push!(_I,i)
             push!(J,i+1)
-            push!(V,1)
+            push!(V,entry_x)
         end
-        DEX = sparse(I,J,V)
+        # Create sparse matrix for DEX
+        DEX = sparse(_I,J,V)
+        if boundary_condition[1] == Dirichlet
+            # Every Nx element on secondary diagonal is 0
+            # This makes sense as the value outside the solution space is forced
+            # to zero
+            for i = grid_size[1]:grid_size[1]:grid_size[1]*grid_size[2]-1
+                DEX[i,i+1] = 0
+            end
+        end
         if boundary_condition[1] == Periodic
+            # Calculate entry from Bloch's theorum
             Λ_x = grid_size[1] * grid_resolution[1]
             entry_periodic_x = exp(1.0im*k_inc[1]*Λ_x)
-            for i = grid_size[1]:grid_size[1]:grid_size[1]*grid_size[2]-1
-                DEX[i,Int(i/grid_size[1])] = entry_periodic_x
-                DEX[i,i+1] = 0
+
+            # Place entry at boundary
+            for i = grid_size[1]:grid_size[1]:grid_size[1]*grid_size[2]
+                DEX[i,i-grid_size[1]+1] = entry_periodic_x*entry_x
+                if i+1<= grid_size[1]*grid_size[2]
+                    DEX[i,i+1] = 0
+                end
             end
         end
     end
 
     # Clear Variables
-    I = Int64[]
+    _I = Int64[]
     J = Int64[]
-    V = Float64[]
+    V = Complex{Float64}[]
 
     # Check if Ny = 1
-    if grid_size[1] == 1
-        DEY = 1.0im*k_inc[2]*sparse(I,grid_size[1]*grid_size[2])
+    if grid_size[2] == 1
+        DEY = 1.0im*k_inc[2]*sparse(I,grid_size[1]*grid_size[2],grid_size[1]*grid_size[2])
     else
-        # Every element is multiplied by 1/Δx
+        # Every element is multiplied by 1/Δy
         entry_y = 1/grid_resolution[2]
         for i = 1:grid_size[1]*grid_size[2]
             # Main Diagonal
-            push!(I,i)
+            push!(_I,i)
             push!(J,i)
-            push!(V,-1)
+            push!(V,-entry_y)
         end
-        for i = 1:grid_size[1]*grid_size[2]-1
+        for i = 1:grid_size[1]*grid_size[2]-grid_size[1]
             # Secondary Diagonal
-            push!(I,i)
-            push!(J,i+1)
-            push!(V,1)
+            push!(_I,i)
+            push!(J,i+grid_size[1]) # The diagonal is located Nx past the main diagonal
+            push!(V,entry_y)
         end
+        DEY = sparse(_I,J,V)
+        # There is no manifestation of the Dirichlet bondary condition in the Dy matrix
         if boundary_condition[2] == Periodic
-            # FIXME
+            # For the periodic boundary condition in y, we only place elements when the boundary exists
+            # This forms another diagonal, starting in column 1 after the roll over from the second diagonal
+            # This roll over occurs when at row Nx*Ny-Nx hits the edge of the matrix
+            # There will only be Nx entries then
+
+            # Bloch theorem entry
+            Λ_y = grid_size[2] * grid_resolution[2]
+            entry_periodic_y = exp(1.0im*k_inc[2]*Λ_y)
+
+            # Place at boundary
+            for i = 1:grid_size[1]
+                DEY[i+grid_size[1]*grid_size[2]-grid_size[1],i] = entry_periodic_y*entry_y
+            end
         end
-        DEY = sparse(I,J,V)
     end
     return DEX,DEY
 end

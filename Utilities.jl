@@ -182,6 +182,15 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple
     # J a vector of column indicies, and V a vector of values
     # We do this to create our large derivative array for the two boundary condition cases
 
+    # For the case when we supply an incident wave vector but the boundary is Dirichlet,
+    # we need to set the k_inc back to zero
+    if boundary_condition[1] == Dirichlet
+        k_inc[1] = 0
+    end
+    if boundary_condition[2] == Dirichlett
+        k_inc[2] = 0
+    end
+
     # Storing results in a sparse array of row index I, column index J, and value V
     _I = Int64[] # I is reserved for the UniformScaling constant for Identity
     J = Int64[]

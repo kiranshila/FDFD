@@ -16,11 +16,10 @@ c_0 = 299792458
 # Solution Setup
 freq = 38e9 # Source frequency
 λ_0 = c_0/freq
-Nx = 100
-Ny = 100
-# Note - This is cols, rows
-NGRID = (Ny,Nx) # This is the entire solution space in number of boxes in the "1x" grid
-RES = ((5*λ_0)/Ny,(5*λ_0)/Nx) # This is the grid resolution, test setup here is 5λ
+Nx = 500
+Ny = 500
+NGRID = (Nx,Ny) # This is the entire solution space in number of boxes in the "1x" grid, Nx is rows, Ny is columns
+RES = ((5*λ_0)/Nx,(5*λ_0)/Ny) # This is the grid resolution, test setup here is 5λ
 NPML = (10,10,10,10) # This sets up the PML boundary, xlow, xhigh, ylow, yhigh - size in "1x" grid
 θ = 0 # Angle of incidence in degrees
 Polarization = E # E or H - H is TM, E is TE
@@ -37,8 +36,8 @@ dy2 = RES[2]/2
 ### Test 1 - Air ###
 
 # Initialize 2X Grid
-ϵ_r_2X_Grid = ones(ComplexF64,Ny2,Nx2)
-μ_r_2X_Grid = ones(ComplexF64,Ny2,Nx2)
+ϵ_r_2X_Grid = ones(ComplexF64,Nx2,Ny2)
+μ_r_2X_Grid = ones(ComplexF64,Nx2,Ny2)
 
 # Step 2 - Calculate PML parameters for 2X grid
 sx,sy = calculate_PML_2D(2 .* NGRID,2 .* NPML)
@@ -50,10 +49,10 @@ sx,sy = calculate_PML_2D(2 .* NGRID,2 .* NPML)
 ϵ_r_y = ϵ_r_2X_Grid .* sx ./ sy
 
 # Step 4 - Overlay materials onto 1X grid
-μ_r_x = μ_r_x[2:2:Ny2,1:2:Nx2]
-μ_r_y = μ_r_y[1:2:Ny2,2:2:Nx2]
-ϵ_r_x = ϵ_r_x[1:2:Ny2,2:2:Nx2]
-ϵ_r_y = ϵ_r_y[2:2:Ny2,1:2:Nx2]
+μ_r_x = μ_r_x[1:2:Nx2,2:2:Ny2]
+μ_r_y = μ_r_y[2:2:Nx2,1:2:Ny2]
+ϵ_r_x = ϵ_r_x[2:2:Nx2,1:2:Ny2]
+ϵ_r_y = ϵ_r_y[1:2:Nx2,2:2:Ny2]
 
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0

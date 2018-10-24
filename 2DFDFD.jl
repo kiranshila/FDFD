@@ -47,12 +47,16 @@ sx,sy = calculate_PML_2D(2 .* NGRID,2 .* NPML)
 ϵ_r_x = ϵ_r_2X_Grid ./ sx .* sy
 μ_r_y = μ_r_2X_Grid .* sx ./ sy
 ϵ_r_y = ϵ_r_2X_Grid .* sx ./ sy
+μ_r_z = μ_r_2X_Grid .* sx .* sy
+ϵ_r_z = ϵ_r_2X_Grid .* sx .* sy
 
 # Step 4 - Overlay materials onto 1X grid
 μ_r_x = μ_r_x[1:2:Nx2,2:2:Ny2]
 μ_r_y = μ_r_y[2:2:Nx2,1:2:Ny2]
 ϵ_r_x = ϵ_r_x[2:2:Nx2,1:2:Ny2]
 ϵ_r_y = ϵ_r_y[1:2:Nx2,2:2:Ny2]
+ϵ_r_z = ϵ_r_z[1:2:Nx2,1:2:Ny2]
+μ_r_z = μ_r_z[2:2:Nx2,2:2:Ny2]
 
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
@@ -63,6 +67,8 @@ m = [-floor(Nx/2):floor(Nx/2)]
 # Step 6 - Diagonalize material matrices
 ϵ_r_x = spdiagm(0 => ϵ_r_x[:])
 ϵ_r_y = spdiagm(0 => ϵ_r_y[:])
+ϵ_r_z = spdiagm(0 => ϵ_r_z[:])
+μ_r_z = spdiagm(0 => μ_r_z[:])
 μ_r_x = spdiagm(0 => μ_r_x[:])
 μ_r_y = spdiagm(0 => μ_r_y[:])
 
@@ -70,8 +76,8 @@ m = [-floor(Nx/2):floor(Nx/2)]
 DEX,DEY,DHX,DHY = yee_grid_derivative(NGRID,k₀*RES, thisBC, k_inc/k₀) # Normalize k terms
 
 # Step 8 - Compute wave vector matrix A # Hard
-A_E = DHX/μ_r_y*DEX + DHY/μ_r_x*DEY
-A_H = DEX/ϵ_r_y*DHX + DEY/ϵ_r_x*DHY
+A_E = DHX/μ_r_y*DEX + DHY/μ_r_x*DEY + ϵ_r_z
+A_H = DEX/ϵ_r_y*DHX + DEY/ϵ_r_x*DHY + μ_r_z
 
 # Step 9 - Compute source field
 F_Src = [exp(1.0im*(k_inc[1]*i + k_inc[2]*j)) for i = 1:Nx, j = 1:Ny]
@@ -96,8 +102,9 @@ end
 
 # Step 12 - Solve
 f = Array(A_E)^-1 * b
+
 f = reshape(f,(Nx,Ny))
 # Step 13 - Post Process
 
 # Visualize Data
-heatmap(map(x->real(x),DHY))
+heatmap(map(x->real(x),f))

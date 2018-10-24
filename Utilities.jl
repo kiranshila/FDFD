@@ -140,7 +140,7 @@ function calculate_PML_2D(grid_size, PML_size)
     a_max = 3
     p = 3 # Drop off rate
     σ_prime_max = 1 # Maximum conductivity
-
+    η = 376.73031333108594
     # There are two cases, 2D and 3D - assume 2D #FIXME
     # Nx is number of columns, Ny is number of rows
     sx = fill(1.0+0.0im,grid_size) # Fill soulution space with 1s
@@ -149,25 +149,25 @@ function calculate_PML_2D(grid_size, PML_size)
     for nx = 1:PML_size[1]
         ax = 1 + a_max * (nx/PML_size[1])^p
         σ_prime_x = σ_prime_max * (sin((pi*nx)/(2*PML_size[1])))^2
-        sx[PML_size[1]-nx+1,:] = fill(ax * (1 + 1.0im * η_0 * σ_prime_x),(grid_size[2],1))
+        sx[PML_size[1]-nx+1,:] = fill(ax * (1 + 1.0im * η * σ_prime_x),(grid_size[2],1))
     end
     # Add xhigh PML
     for nx = 1:PML_size[2]
         ax = 1 + a_max * (nx/PML_size[2])^p
         σ_prime_x = σ_prime_max * (sin((pi*nx)/(2*PML_size[2])))^2
-        sx[grid_size[1]-PML_size[2]+nx,:] = fill(ax * (1 + 1.0im * η_0 * σ_prime_x),(grid_size[2],1))
+        sx[grid_size[1]-PML_size[2]+nx,:] = fill(ax * (1 + 1.0im * η * σ_prime_x),(grid_size[2],1))
     end
     # Add ylow PML
     for ny = 1:PML_size[3]
         ay = 1 + a_max * (ny/PML_size[3])^p
         σ_prime_y = σ_prime_max * (sin((pi*ny)/(2*PML_size[3])))^2
-        sy[:,PML_size[3]-ny+1] = fill(ay * (1 + 1.0im * η_0 * σ_prime_y),(1,grid_size[1]))
+        sy[:,PML_size[3]-ny+1] = fill(ay * (1 + 1.0im * η * σ_prime_y),(1,grid_size[1]))
     end
     # Add yhigh PML
     for ny = 1:PML_size[4]
         ay = 1 + a_max * (ny/PML_size[4])^p
         σ_prime_y = σ_prime_max * (sin((pi*ny)/(2*PML_size[4])))^2
-        sy[:,grid_size[2]-PML_size[4]+ny] = fill(ay * (1 + 1.0im * η_0 * σ_prime_y),(1,grid_size[1]))
+        sy[:,grid_size[2]-PML_size[4]+ny] = fill(ay * (1 + 1.0im * η * σ_prime_y),(1,grid_size[1]))
     end
     return sx,sy
 end

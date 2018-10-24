@@ -142,6 +142,7 @@ function calculate_PML_2D(grid_size, PML_size)
     σ_prime_max = 1 # Maximum conductivity
 
     # There are two cases, 2D and 3D - assume 2D #FIXME
+    # Nx is number of columns, Ny is number of rows
     sx = fill(1.0+0.0im,grid_size) # Fill soulution space with 1s
     sy = fill(1.0+0.0im,grid_size)
     # Add xlow PML

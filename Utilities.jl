@@ -187,7 +187,7 @@ function yee_grid_derivative(grid_size,grid_resolution,boundary_condition::Tuple
     if boundary_condition[1] == Dirichlet
         k_inc[1] = 0
     end
-    if boundary_condition[2] == Dirichlett
+    if boundary_condition[2] == Dirichlet
         k_inc[2] = 0
     end
 

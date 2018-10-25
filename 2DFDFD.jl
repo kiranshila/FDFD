@@ -15,7 +15,7 @@ freq = 24e9
 freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
-Resolution = 1
+Resolution = 30
 θ = 15 # Angle of incidence in degrees
 Polarization = H # E or H - H is TM, E is TE
 thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
@@ -95,12 +95,12 @@ println("Computing source vector b")
 # Step 11 - Compute source vector b
 b = (Q*A - A*Q)*F_Src[:]
 
-f = F_Src[:]
-println("Solving FDFD problem - this may take a while")
 
+println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
-fact = ilu(A, τ=0.001)
-bicgstabl!(f,A,b,2, verbose = true, max_mv_products = 1000000, Pl = ilu)
+LUfact = ilu(A, τ=0.0001)
+
+f = idrs(A,b,s = 30,verbose = true, maxiter = 500000, tol = 1e-05)
 #f = Array(A)^-1*b
 
 f = reshape(f,(NGRID[1],NGRID[2]))

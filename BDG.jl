@@ -16,7 +16,7 @@ function BDG(resolution,NPML,highF)
     x3 = 0.1080*λ
 
     # Device material
-    ϵ_r = 1.0
+    ϵ_r = 10.0
     μ_r = 1.0
 
     # Padding Setup
@@ -36,7 +36,7 @@ function BDG(resolution,NPML,highF)
     initalRes = L/N # So now L/N is an integer
 
     ## Calculate 1X Grid Size
-    Nx = Int(L/initalRes)
+    Nx = floor(Int64,L/initalRes)
     Ny = ceil(Int64,totalH/initalRes) + NPML + ceil(Int64,y_pad/initalRes)
 
     # Material Space Setup - 2X Grid

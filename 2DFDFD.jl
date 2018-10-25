@@ -3,7 +3,6 @@ using LinearAlgebra
 using GeometryTypes
 using Makie
 using SparseArrays
-using IncompleteLU
 using IterativeSolvers
 include("Yee.jl")
 include("FDFD_Calculations.jl")

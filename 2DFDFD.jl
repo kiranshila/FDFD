@@ -1,9 +1,10 @@
 # 2D FDFD Solver
 using LinearAlgebra
 using GeometryTypes
-using IterativeSolvers
 using Makie
 using SparseArrays
+using IncompleteLU
+using IterativeSolvers
 include("Yee.jl")
 include("FDFD_Calculations.jl")
 include("BDG.jl")
@@ -94,11 +95,13 @@ println("Computing source vector b")
 # Step 11 - Compute source vector b
 b = (Q*A - A*Q)*F_Src[:]
 
-
+f = F_Src[:]
 println("Solving FDFD problem - this may take a while")
+
 # Step 12 - Solve
-#f = bicgstabl(A,b)
-f = Array(A)^-1*b
+fact = ilu(A, τ=0.001)
+bicgstabl!(f,A,b,2, verbose = true, max_mv_products = 1000000, Pl = ilu)
+#f = Array(A)^-1*b
 
 f = reshape(f,(NGRID[1],NGRID[2]))
 # Step 13 - Post Process

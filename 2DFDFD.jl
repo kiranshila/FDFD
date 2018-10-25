@@ -1,33 +1,33 @@
 # 2D FDFD Solver
 using LinearAlgebra
 using GeometryTypes
+using IterativeSolvers
 using Makie
+using SparseArrays
 include("Yee.jl")
-include("Utilities.jl")
+include("FDFD_Calculations.jl")
 include("BDG.jl")
 
-println("Setting up physical constants")
-# Physical Constants
-c_0 = 299792458
-μ_0 = 1.256637061E-6
-ϵ_0 = 1/(c_0^2*μ_0)
-η_0 = sqrt(μ_0/ϵ_0)
-
 # Solution Setup
+c_0 = 299792458
 freq = 24e9
+freq_sweep = (20e9,30e9) # Low to high
+numPoints = 401
 λ_0 = c_0/freq
-Resolution = 40
+Resolution = 1
 θ = 15 # Angle of incidence in degrees
-Polarization = E # E or H - H is TM, E is TE
+Polarization = H # E or H - H is TM, E is TE
 thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
+PML_size = 10
 
 println("Building Binary Diffraction Grating")
 # Initialize 2X Grid with Binary Diffraction Grating
-ϵ_r_2X_Grid,μ_r_2X_Grid,NGRID,NPML,Nx2,Ny2,RES,Q_Limit = BDG(Resolution)
+ϵ_r_2X_Grid,μ_r_2X_Grid,NPML,Nx2,Ny2,RES,Q_Limit = BDG(Resolution,PML_size,freq_sweep[2])
+NGRID = (floor(Int64,Nx2/2),floor(Int64,Ny2/2))
 
 println("Calculating PML Parameters")
 # Step 2 - Calculate PML parameters for 2X grid
-sx,sy = calculate_PML_2D(2 .* NGRID,2 .* NPML)
+sx,sy = calculate_PML_2D((Nx2,Ny2),NPML)
 
 println("Incorporating PML into 2X grid")
 # Step 3 - Incorporate PML into the 2X grid
@@ -68,8 +68,11 @@ DEX,DEY,DHX,DHY = yee_grid_derivative(NGRID,k₀*RES, thisBC, k_inc/k₀) # Norm
 
 println("Computing wave vector matricies - this may take a while")
 # Step 8 - Compute wave vector matrix A # Hard
-A_E = DHX/μ_r_y*DEX + DHY/μ_r_x*DEY + ϵ_r_z
-A_H = DEX/ϵ_r_y*DHX + DEY/ϵ_r_x*DHY + μ_r_z
+if Polarization == H
+    A = DHX/μ_r_y*DEX + DHY/μ_r_x*DEY + ϵ_r_z
+elseif Polarization == E
+    A = DEX/ϵ_r_y*DHX + DEY/ϵ_r_x*DHY + μ_r_z
+end
 
 println("Computing source field")
 # Step 9 - Compute source field
@@ -89,15 +92,13 @@ Q = spdiagm(0 => Q[:])
 
 println("Computing source vector b")
 # Step 11 - Compute source vector b
-if Polarization == H
-    b = (Q*A_E - A_E*Q)*F_Src[:]
-elseif Polarization == E
-    b = (Q*A_H - A_H*Q)*F_Src[:]
-end
+b = (Q*A - A*Q)*F_Src[:]
+
 
 println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
-f = Array(A_E)^-1 * b
+#f = bicgstabl(A,b)
+f = Array(A)^-1*b
 
 f = reshape(f,(NGRID[1],NGRID[2]))
 # Step 13 - Post Process
@@ -105,8 +106,22 @@ f = reshape(f,(NGRID[1],NGRID[2]))
 println("Visualizing")
 # Visualize Data
 ϵr_vis = heatmap(ϵ_r_2X_Grid,scale_plot = false)
-fields = heatmap(map(x->real(x),f),scale_plot = false, interpolate = true)
+
+#thisTime = Node(0.0)
+fields = heatmap(
+    map(x->real(x),f)
+    ,scale_plot = false
+    ,interpolate = false)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)
 display(scene)
+
+#==
+steps = 100
+for i = 1:steps
+    fields = heatmap(map(x->real(x*exp(1.0im*(2*pi)/i * steps)),f),scale_plot = false, interpolate = false)
+    scene = AbstractPlotting.vbox(ϵr_vis, fields)
+    push!(thisTime,i)
+end
+==#
 
 println("Simulation complete")

@@ -115,7 +115,7 @@ println("Visualizing")
 
 #thisTime = Node(0.0)
 fields = heatmap(
-    map(x->real(x),f)
+    map(x->real(x),F_Src)
     ,scale_plot = false
     ,interpolate = false)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)

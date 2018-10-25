@@ -15,9 +15,9 @@ freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
 Resolution = 20
-θ = 15 # Angle of incidence in degrees
+θ = 90 # Angle of incidence in degrees
 Polarization = H # E or H - H is TM, E is TE
-thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
+thisBC = (Dirichlet,Dirichlet) # Boundary conditions for x,y
 PML_size = 40
 
 println("Building Binary Diffraction Grating")

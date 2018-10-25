@@ -14,11 +14,11 @@ freq = 24e9
 freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
-Resolution = 8
+Resolution = 20
 θ = 15 # Angle of incidence in degrees
 Polarization = H # E or H - H is TM, E is TE
 thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
-PML_size = 10
+PML_size = 40
 
 println("Building Binary Diffraction Grating")
 # Initialize 2X Grid with Binary Diffraction Grating
@@ -42,10 +42,10 @@ println("Overlaying materials onto 1X grid")
 # Step 4 - Overlay materials onto 1X grid
 μ_r_x = μ_r_x[1:2:Nx2,2:2:Ny2]
 μ_r_y = μ_r_y[2:2:Nx2,1:2:Ny2]
+μ_r_z = μ_r_z[2:2:Nx2,2:2:Ny2]
 ϵ_r_x = ϵ_r_x[2:2:Nx2,1:2:Ny2]
 ϵ_r_y = ϵ_r_y[1:2:Nx2,2:2:Ny2]
 ϵ_r_z = ϵ_r_z[1:2:Nx2,1:2:Ny2]
-μ_r_z = μ_r_z[2:2:Nx2,2:2:Ny2]
 
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
@@ -114,7 +114,7 @@ println("Visualizing")
 
 #thisTime = Node(0.0)
 fields = heatmap(
-    map(x->real(x),F_Src)
+    map(x->real(x),f)
     ,scale_plot = false
     ,interpolate = false)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)

@@ -16,7 +16,7 @@ function BDG(resolution,NPML,highF)
     x3 = 0.1080*λ
 
     # Device material
-    ϵ_r = 10.0
+    ϵ_r = 1.0
     μ_r = 1.0
 
     # Padding Setup

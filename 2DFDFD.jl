@@ -15,7 +15,7 @@ freq = 24e9
 freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
-Resolution = 30
+Resolution = 8
 θ = 15 # Angle of incidence in degrees
 Polarization = H # E or H - H is TM, E is TE
 thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
@@ -98,9 +98,12 @@ b = (Q*A - A*Q)*F_Src[:]
 
 println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
-LUfact = ilu(A, τ=0.0001)
-
-f = idrs(A,b,s = 30,verbose = true, maxiter = 500000, tol = 1e-05)
+if size(A,2) < 15000
+    # Direct Solve, we have the RAM
+    f = Array(A)^-1*b
+else
+    f = idrs(A,b,s = 30,verbose = true, maxiter = 5000, tol = 1e-05)
+end
 #f = Array(A)^-1*b
 
 f = reshape(f,(NGRID[1],NGRID[2]))

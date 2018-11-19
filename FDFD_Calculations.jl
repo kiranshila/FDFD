@@ -123,7 +123,7 @@ function calculate_PML_2D(grid_size, PML_size)
 
     # These variables setup the behavior of the PML layer
     a_max = 3
-    p = 3 # Drop off rate
+    p = 2 # Drop off rate
     σ_prime_max = 1 # Maximum conductivity
     η = 376.73031333108594
     # There are two cases, 2D and 3D - assume 2D #FIXME

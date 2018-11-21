@@ -11,7 +11,7 @@ include("BDG.jl")
 # Solution Setup
 c_0 = 299792458
 freq = 24e9
-freq_sweep = (20e9,30e9) # Low to high
+freq_sweep = (20e9,30e9) # Low to highs
 numPoints = 401
 λ_0 = c_0/freq
 Resolution = 8
@@ -50,7 +50,7 @@ println("Overlaying materials onto 1X grid")
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
-k_inc = k₀ .* RES[1]*2 .* [sind(θ);cosd(θ)]
+k_inc = k₀ .* 0.0012 .* [sind(θ);cosd(θ)]
 m = collect(-floor(Int64,NGRID[1]/2):floor(Int64,NGRID[1]/2))
 #k_xm = k_inc[1] - ((2/NGRID[1]) .* pi .* m)
 # FIXME
@@ -78,7 +78,7 @@ end
 
 println("Computing source field")
 # Step 9 - Compute source field
-F_Src = [exp(1.0im*(k_inc[1]*i + k_inc[2]*j)) for i = 1:NGRID[1], j = 1:NGRID[2]]
+F_Src = [exp(1.0im*-(k_inc[1]*i + k_inc[2]*j)) for i = 1:NGRID[1], j = 1:NGRID[2]]
 
 println("Computing source field mask")
 # Step 10 - Compute scattered-field masking matrix
@@ -120,7 +120,7 @@ println("Visualizing")
 fields = heatmap(
     map(x->real(x),f)
     ,scale_plot = false
-    ,interpolate = false)
+    ,interpolate = true)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)
 display(scene)
 

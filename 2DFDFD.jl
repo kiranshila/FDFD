@@ -15,7 +15,7 @@ freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
 Resolution = 8
-θ = -30 # Angle of incidence in degrees
+θ = 15 # Angle of incidence in degrees
 Polarization = E # E or H - H is TE, E is TM
 thisBC = (Periodic,Dirichlet) # Boundary conditions for x,y
 PML_size = 20
@@ -50,7 +50,7 @@ println("Overlaying materials onto 1X grid")
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
-k_inc = k₀ .* [sind(θ);cosd(θ)]
+k_inc = k₀ .* RES[1]*2 .* [sind(θ);cosd(θ)]
 m = collect(-floor(Int64,NGRID[1]/2):floor(Int64,NGRID[1]/2))
 #k_xm = k_inc[1] - ((2/NGRID[1]) .* pi .* m)
 # FIXME

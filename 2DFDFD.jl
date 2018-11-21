@@ -15,10 +15,10 @@ freq_sweep = (20e9,30e9) # Low to high
 numPoints = 401
 λ_0 = c_0/freq
 Resolution = 8
-θ = 0 # Angle of incidence in degrees
-Polarization = H # E or H - H is TM, E is TE
-thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
-PML_size = 10
+θ = -30 # Angle of incidence in degrees
+Polarization = E # E or H - H is TE, E is TM
+thisBC = (Periodic,Dirichlet) # Boundary conditions for x,y
+PML_size = 20
 
 println("Building Binary Diffraction Grating")
 # Initialize 2X Grid with Binary Diffraction Grating
@@ -50,7 +50,9 @@ println("Overlaying materials onto 1X grid")
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
-k_inc = k₀ .* RES .* [cosd(θ);sind(θ)]
+k_inc = k₀ .* [sind(θ);cosd(θ)]
+m = collect(-floor(Int64,NGRID[1]/2):floor(Int64,NGRID[1]/2))
+#k_xm = k_inc[1] - ((2/NGRID[1]) .* pi .* m)
 # FIXME
 
 println("Diagonalizing material matricies")
@@ -82,8 +84,8 @@ println("Computing source field mask")
 # Step 10 - Compute scattered-field masking matrix
 # Mask is top of solution space, past PML, a few cells into the free space
 Q = zeros(NGRID[1],NGRID[2])
-for i = 1:Q_Limit
-    for j = 1:NGRID[2]
+for i = 1:NGRID[1]
+    for j = 1:Q_Limit
         Q[i,j] = 1
     end
 end
@@ -94,6 +96,8 @@ println("Computing source vector b")
 # Step 11 - Compute source vector b
 b = (Q*A - A*Q)*F_Src[:]
 
+# Testing
+b_square = reshape(b,NGRID)
 
 println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
@@ -101,9 +105,9 @@ if size(A,2) < 15000
     # Direct Solve, we have the RAM
     f = Array(A)^-1*b
 else
+    # Iterative Solve with 5000 iterations
     f = idrs(A,b,s = 30,verbose = true, maxiter = 5000, tol = 1e-05)
 end
-#f = Array(A)^-1*b
 
 f = reshape(f,(NGRID[1],NGRID[2]))
 # Step 13 - Post Process
@@ -119,14 +123,5 @@ fields = heatmap(
     ,interpolate = false)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)
 display(scene)
-
-#==
-steps = 100
-for i = 1:steps
-    fields = heatmap(map(x->real(x*exp(1.0im*(2*pi)/i * steps)),f),scale_plot = false, interpolate = false)
-    scene = AbstractPlotting.vbox(ϵr_vis, fields)
-    push!(thisTime,i)
-end
-==#
 
 println("Simulation complete")

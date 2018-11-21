@@ -16,7 +16,7 @@ function BDG(resolution,NPML,highF)
     x3 = 0.1080*λ
 
     # Device material
-    ϵ_r = 10.0
+    ϵ_r = 1.0
     μ_r = 1.0
 
     # Padding Setup
@@ -71,5 +71,5 @@ function BDG(resolution,NPML,highF)
     #ϵ_r_2X_Grid[:,1:y_PML] = fill(ϵ_r,Nx2,y_PML)
     #ϵ_r_2X_Grid[:,end-y_PML+1:end] = fill(ϵ_r,Nx2,y_PML)
 
-    return ϵ_r_2X_Grid',μ_r_2X_Grid',(0,0,y_PML,y_PML),Ny2,Nx2,[initalRes initalRes],Q
+    return ϵ_r_2X_Grid,μ_r_2X_Grid,(0,0,y_PML,y_PML),Nx2,Ny2,[initalRes initalRes],Q
 end

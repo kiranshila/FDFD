@@ -50,7 +50,7 @@ println("Overlaying materials onto 1X grid")
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
-k_inc = k₀ .* 0.0012 .* [sind(θ);cosd(θ)]
+k_inc = k₀ .* 0.0015 .* [sind(θ);cosd(θ)]
 m = collect(-floor(Int64,NGRID[1]/2):floor(Int64,NGRID[1]/2))
 #k_xm = k_inc[1] - ((2/NGRID[1]) .* pi .* m)
 # FIXME
@@ -78,7 +78,7 @@ end
 
 println("Computing source field")
 # Step 9 - Compute source field
-F_Src = [exp(1.0im*-(k_inc[1]*i + k_inc[2]*j)) for i = 1:NGRID[1], j = 1:NGRID[2]]
+F_Src = [exp(1.0im*(k_inc[1]*i + k_inc[2]*j)) for i = 1:NGRID[1], j = 1:NGRID[2]]
 
 println("Computing source field mask")
 # Step 10 - Compute scattered-field masking matrix
@@ -96,14 +96,11 @@ println("Computing source vector b")
 # Step 11 - Compute source vector b
 b = (Q*A - A*Q)*F_Src[:]
 
-# Testing
-b_square = reshape(b,NGRID)
-
 println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
 if size(A,2) < 15000
     # Direct Solve, we have the RAM
-    f = Array(A)^-1*b
+    f = @time Array(A)^-1*b
 else
     # Iterative Solve with 5000 iterations
     f = idrs(A,b,s = 30,verbose = true, maxiter = 5000, tol = 1e-05)
@@ -114,11 +111,11 @@ f = reshape(f,(NGRID[1],NGRID[2]))
 
 println("Visualizing")
 # Visualize Data
-ϵr_vis = heatmap(ϵ_r_2X_Grid,scale_plot = false)
+ϵr_vis = heatmap(ϵ_r_2X_Grid',scale_plot = false)
 
 #thisTime = Node(0.0)
 fields = heatmap(
-    map(x->real(x),f)
+    map(x->real(x),f')
     ,scale_plot = false
     ,interpolate = true)
 scene = AbstractPlotting.vbox(ϵr_vis, fields)

@@ -14,11 +14,19 @@ freq = 24e9
 freq_sweep = (20e9,30e9) # Low to highs
 numPoints = 401
 λ_0 = c_0/freq
-Resolution = 8
+<<<<<<< current
+Resolution = 10
 θ = 15 # Angle of incidence in degrees
 Polarization = E # E or H - H is TE, E is TM
 thisBC = (Periodic,Dirichlet) # Boundary conditions for x,y
 PML_size = 20
+=======
+Resolution = 20
+θ = 15 # Angle of incidence in degrees
+Polarization = H # E or H - H is TM, E is TE
+thisBC = (Dirichlet,Periodic) # Boundary conditions for x,y
+PML_size = 40 # On 2X Grid
+>>>>>>> before discard
 
 println("Building Binary Diffraction Grating")
 # Initialize 2X Grid with Binary Diffraction Grating
@@ -32,11 +40,13 @@ sx,sy = calculate_PML_2D((Nx2,Ny2),NPML)
 println("Incorporating PML into 2X grid")
 # Step 3 - Incorporate PML into the 2X grid
 μ_r_x = μ_r_2X_Grid ./ sx .* sy
-ϵ_r_x = ϵ_r_2X_Grid ./ sx .* sy
 μ_r_y = μ_r_2X_Grid .* sx ./ sy
-ϵ_r_y = ϵ_r_2X_Grid .* sx ./ sy
 μ_r_z = μ_r_2X_Grid .* sx .* sy
+
+ϵ_r_x = ϵ_r_2X_Grid ./ sx .* sy
+ϵ_r_y = ϵ_r_2X_Grid .* sx ./ sy
 ϵ_r_z = ϵ_r_2X_Grid .* sx .* sy
+
 
 println("Overlaying materials onto 1X grid")
 # Step 4 - Overlay materials onto 1X grid
@@ -50,7 +60,7 @@ println("Overlaying materials onto 1X grid")
 println("Computing wave vector terms")
 # Step 5 - Compute wave vector terms
 k₀ = (2*pi)/λ_0
-k_inc = k₀ .* 0.0012 .* [sind(θ);cosd(θ)]
+k_inc = k₀ .* 0.002 .* [sind(θ);cosd(θ)]
 m = collect(-floor(Int64,NGRID[1]/2):floor(Int64,NGRID[1]/2))
 #k_xm = k_inc[1] - ((2/NGRID[1]) .* pi .* m)
 # FIXME
@@ -103,7 +113,7 @@ println("Solving FDFD problem - this may take a while")
 # Step 12 - Solve
 if size(A,2) < 15000
     # Direct Solve, we have the RAM
-    f = Array(A)^-1*b
+    f = Array(A)\b
 else
     # Iterative Solve with 5000 iterations
     f = idrs(A,b,s = 30,verbose = true, maxiter = 5000, tol = 1e-05)
